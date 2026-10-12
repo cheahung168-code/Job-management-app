@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Management & Meter App</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 h-full flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0 sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                    <i data-lucide="gauge" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight leading-none">JobMeter Pro</h1>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">Background Meter Tracker</span>
+                </div>
+            </div>
+
+            <!-- Header controls / Theme Toggle -->
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleDarkMode()" aria-label="Toggle theme" class="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+                    <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Scrollable Area -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 pb-24 overflow-y-auto">
+        
+        <!-- Global Notification Toast -->
+        <div id="toast" class="fixed top-20 right-4 z-50 transform translate-y-[-200%] opacity-0 transition-all duration-300 pointer-events-none">
+            <div id="toast-content" class="bg-slate-900 text-white dark:bg-slate-800 px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm border border-slate-700">
+                <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+                <span id="toast-msg">Action completed successfully</span>
+            </div>
+        </div>
+
+        <!-- TAB 1: DASHBOARD & METER -->
+        <section id="tab-dashboard" class="tab-content active space-y-6">
+            <!-- Active Meter Card -->
+            <div class="bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-2xl relative overflow-hidden border border-indigo-500/20">
+                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-medium mb-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="meter-status-dot"></span>
+                            <span id="meter-status-text">Meter Ready</span>
+                        </div>
+                        <h2 class="text-2xl font-bold tracking-tight" id="active-job-title">Select a job to start meter</h2>
+                    </div>
+
+                    <!-- Job Selector dropdown -->
+                    <div class="w-full md:w-72">
+                        <label class="block text-xs uppercase tracking-wider text-indigo-300 font-semibold mb-1">Active Job / Client</label>
+                        <select id="meter-job-select" class="w-full bg-slate-800/90 border border-indigo-500/30 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all">
+                            <option value="">-- Choose Job --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Main Meter Display Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                    <!-- Elapsed Time Box -->
+                    <div class="bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-indigo-200/70 font-medium uppercase tracking-wider mb-1">Elapsed Time</p>
+                            <div class="text-3xl md:text-4xl font-mono font-bold tracking-tight" id="meter-timer">00:00:00</div>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-300">
+                            <i data-lucide="clock" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+
+                    <!-- Live Earnings Box -->
+                    <div class="bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-indigo-200/70 font-medium uppercase tracking-wider mb-1">Live Earnings (<span id="currency-symbol">$</span>/hr rate)</p>
+                            <div class="text-3xl md:text-4xl font-mono font-bold tracking-tight text-emerald-400" id="meter-earnings">$0.00</div>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                            <i data-lucide="dollar-sign" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meter Control Action Buttons -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <button id="btn-start-meter" onclick="startMeter()" class="flex-1 min-w-[140px] bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2 transition-all">
+                        <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+                        <span>Start Meter</span>
+                    </button>
+                    <button id="btn-pause-meter" onclick="pauseMeter()" disabled class="bg-amber-500/50 hover:bg-amber-500 text-white font-semibold py-3.5 px-5 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                        <i data-lucide="pause" class="w-5 h-5 fill-current"></i>
+                        <span class="hidden sm:inline">Pause</span>
+                    </button>
+                    <button id="btn-stop-meter" onclick="stopMeter()" disabled class="bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-rose-600/25 flex items-center justify-center space-x-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                        <i data-lucide="square" class="w-5 h-5 fill-current"></i>
+                        <span>Finish Job</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats Overview & Recent Sessions -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Completed Jobs</p>
+                        <h4 class="text-2xl font-bold mt-0.5" id="stat-completed-count">0</h4>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Earned (All Time)</p>
+                        <h4 class="text-2xl font-bold mt-0.5" id="stat-total-earned">$0.00</h4>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="briefcase" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Active Jobs in List</p>
+                        <h4 class="text-2xl font-bold mt-0.5" id="stat-active-jobs">0</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Logged Sessions -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <h3 class="font-semibold text-base">Recent Work Sessions</h3>
+                    <button onclick="switchTab('reports')" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">View All Reports &rarr;</button>
+                </div>
+                <div id="recent-sessions-list" class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: JOB MANAGEMENT -->
+        <section id="tab-jobs" class="tab-content space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight">Job & Client Management</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Add new jobs, configure hourly rates, and archive completed ones.</p>
+                </div>
+                <button onclick="openJobModal()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center space-x-2 transition-all">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Add New Job</span>
+                </button>
+            </div>
+
+            <!-- Filter tabs for jobs -->
+            <div class="flex items-center space-x-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                <button onclick="filterJobTab('active')" id="job-tab-active" class="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 transition-colors">Active Jobs</button>
+                <button onclick="filterJobTab('achieved')" id="job-tab-achieved" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Achieved / Completed</button>
+            </div>
+
+            <!-- Jobs Grid -->
+            <div id="jobs-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <!-- TAB 3: REPORTS & ANALYTICS -->
+        <section id="tab-reports" class="tab-content space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight">Reports & Earnings</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Analyze hours worked and total income across custom periods.</p>
+                </div>
+                
+                <!-- Period Filter Selector -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="setReportPeriod('last-week')" id="period-last-week" class="px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-sm transition-all">Last Week</button>
+                    <button onclick="setReportPeriod('last-month')" id="period-last-month" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition-all">Last Month</button>
+                    <button onclick="setReportPeriod('custom')" id="period-custom" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition-all">Custom Range</button>
+                </div>
+            </div>
+
+            <!-- Custom Date Inputs -->
+            <div id="custom-date-container" class="hidden bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Start Date</label>
+                    <input type="date" id="report-start-date" onchange="generateReport()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">End Date</label>
+                    <input type="date" id="report-end-date" onchange="generateReport()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="self-end text-xs text-slate-500 pb-2" id="custom-range-label">Showing results for selected timeframe</div>
+            </div>
+
+            <!-- Summary KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Time Worked</p>
+                    <div class="text-3xl font-bold mt-2" id="report-total-hours">0.0 hrs</div>
+                    <p class="text-xs text-slate-500 mt-1" id="report-total-mins">0 minutes total</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Earnings</p>
+                    <div class="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-2" id="report-total-earnings">$0.00</div>
+                    <p class="text-xs text-slate-500 mt-1">Calculated from job hourly rates</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sessions Recorded</p>
+                    <div class="text-3xl font-bold mt-2" id="report-session-count">0</div>
+                    <p class="text-xs text-slate-500 mt-1">Completed meter runs</p>
+                </div>
+            </div>
+
+            <!-- Detailed Breakdown by Job -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <h3 class="font-semibold text-base">Breakdown by Job / Client</h3>
+                    <button onclick="exportReportCSV()" class="text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition-colors">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Export CSV</span>
+                    </button>
+                </div>
+                <div id="report-breakdown-list" class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Session History Table -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+                    <h3 class="font-semibold text-base">Session Log History</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                <th class="py-3 px-6 font-semibold">Job / Client</th>
+                                <th class="py-3 px-6 font-semibold">Date</th>
+                                <th class="py-3 px-6 font-semibold">Duration</th>
+                                <th class="py-3 px-6 font-semibold">Rate</th>
+                                <th class="py-3 px-6 font-semibold">Earned</th>
+                                <th class="py-3 px-6 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-sessions-table" class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                            <!-- Dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Tab Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 z-30">
+        <div class="max-w-5xl mx-auto px-4 flex items-center justify-around h-16">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center flex-1 h-full text-indigo-600 dark:text-indigo-400 transition-colors">
+                <i data-lucide="gauge" class="w-5 h-5 mb-1"></i>
+                <span class="text-[11px] font-medium">Meter & Dash</span>
+            </button>
+            <button onclick="switchTab('jobs')" id="nav-jobs" class="flex flex-col items-center justify-center flex-1 h-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
+                <i data-lucide="briefcase" class="w-5 h-5 mb-1"></i>
+                <span class="text-[11px] font-medium">Jobs</span>
+            </button>
+            <button onclick="switchTab('reports')" id="nav-reports" class="flex flex-col items-center justify-center flex-1 h-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 mb-1"></i>
+                <span class="text-[11px] font-medium">Reports</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Add/Edit Job Modal -->
+    <div id="job-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 id="job-modal-title" class="font-bold text-lg">Add New Job</h3>
+                <button onclick="closeJobModal()" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="job-form" onsubmit="saveJobForm(event)" class="p-6 space-y-4">
+                <input type="hidden" id="edit-job-id">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Job Name / Client Name *</label>
+                    <input type="text" id="job-name-input" required placeholder="e.g. Acme Corp Consulting" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Hourly Rate ($) *</label>
+                    <input type="number" step="0.01" min="0" id="job-rate-input" required placeholder="50.00" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Description / Notes</label>
+                    <textarea id="job-desc-input" rows="3" placeholder="Optional details about this project..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeJobModal()" class="px-5 py-2.5 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition-all">Save Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Code with Background Timestamp Persistence -->
+    <script>
+        let state = {
+            jobs: [
+                { id: 'job_1', name: 'Web Development - Startup X', rate: 75.00, description: 'Landing page and dashboard UI', status: 'active', createdAt: new Date(Date.now() - 86400000 * 5).toISOString() },
+                { id: 'job_2', name: 'Consulting - Tech Corp', rate: 120.00, description: 'Architecture review', status: 'active', createdAt: new Date(Date.now() - 86400000 * 12).toISOString() }
+            ],
+            sessions: [
+                { id: 'sess_1', jobId: 'job_1', startTime: new Date(Date.now() - 86400000 * 2).toISOString(), durationSeconds: 7200, earned: 150.00 },
+                { id: 'sess_2', jobId: 'job_2', startTime: new Date(Date.now() - 86400000 * 4).toISOString(), durationSeconds: 5400, earned: 180.00 }
+            ],
+            meter: {
+                jobId: null,
+                status: 'stopped', // 'stopped', 'running', 'paused'
+                startTimestamp: null, // exact Unix timestamp (ms) when running started or resumed
+                accumulatedSeconds: 0, // total seconds elapsed before current running segment
+                timerInterval: null
+            },
+            currentJobFilter: 'active',
+            reportPeriod: 'last-week'
+        };
+
+        // Load from LocalStorage and sync background delta on boot
+        function loadStorage() {
+            const savedJobs = localStorage.getItem('jobmeter_jobs');
+            const savedSessions = localStorage.getItem('jobmeter_sessions');
+            const savedMeter = localStorage.getItem('jobmeter_active_meter');
+
+            if (savedJobs) {
+                try { state.jobs = JSON.parse(savedJobs); } catch(e) {}
+            }
+            if (savedSessions) {
+                try { state.sessions = JSON.parse(savedSessions); } catch(e) {}
+            }
+            if (savedMeter) {
+                try {
+                    const m = JSON.parse(savedMeter);
+                    if (m && m.status) {
+                        state.meter = m;
+                        // If it was running when closed/backgrounded, compute exact elapsed time via Date.now()
+                        if (m.status === 'running' && m.startTimestamp) {
+                            const now = Date.now();
+                            const elapsedSinceStart = Math.floor((now - m.startTimestamp) / 1000);
+                            state.meter.accumulatedSeconds += elapsedSinceStart;
+                            // Reset startTimestamp to now so interval continues accurately from this exact moment
+                            state.meter.startTimestamp = now;
+                        }
+                    }
+                } catch(e) {}
+            }
+        }
+
+        function saveStorage() {
+            localStorage.setItem('jobmeter_jobs', JSON.stringify(state.jobs));
+            localStorage.setItem('jobmeter_sessions', JSON.stringify(state.sessions));
+            localStorage.setItem('jobmeter_active_meter', JSON.stringify(state.meter));
+        }
+
+        window.onload = function() {
+            loadStorage();
+            initTheme();
+            renderAll();
+            lucide.createIcons();
+
+            if (state.meter.status !== 'stopped') {
+                resumeMeterAfterReload();
+            }
+
+            // Sync elapsed time when tab gains focus or visibility returns
+            window.addEventListener('focus', handleAppFocus);
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') {
+                    handleAppFocus();
+                }
+            });
+
+            // Prevent accidental loss if meter is running when closing tab
+            window.addEventListener('beforeunload', function(e) {
+                if (state.meter.status === 'running') {
+                    saveStorage();
+                    // Modern browsers ignore custom text, but setting returnValue prompts user confirmation
+                    e.preventDefault();
+                    e.returnValue = 'Meter is currently running in the background. Are you sure you want to leave?';
+                }
+            });
+
+            // Periodic save ticker
+            setInterval(() => {
+                if (state.meter.status === 'running') {
+                    saveStorage();
+                }
+            }, 3000);
+        };
+
+        // Re-calculate elapsed time when returning from background/minimized state
+        function handleAppFocus() {
+            if (state.meter.status === 'running' && state.meter.startTimestamp) {
+                const now = Date.now();
+                const diffSeconds = Math.floor((now - state.meter.startTimestamp) / 1000);
+                if (diffSeconds > 0) {
+                    state.meter.accumulatedSeconds += diffSeconds;
+                    state.meter.startTimestamp = now;
+                    updateMeterDisplay();
+                    saveStorage();
+                }
+            }
+        }
+
+        function initTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+            }
+            lucide.createIcons();
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-msg');
+            const iconEl = document.getElementById('toast-icon');
+            
+            msgEl.textContent = msg;
+            if (type === 'success') {
+                iconEl.setAttribute('data-lucide', 'check-circle');
+                iconEl.className = 'w-5 h-5 text-emerald-400';
+            } else {
+                iconEl.setAttribute('data-lucide', 'alert-circle');
+                iconEl.className = 'w-5 h-5 text-amber-400';
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-[-200%]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-[-200%]', 'opacity-0');
+            }, 3000);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            ['dashboard', 'jobs', 'reports'].forEach(id => {
+                const btn = document.getElementById('nav-' + id);
+                if (id === tabId) {
+                    btn.className = 'flex flex-col items-center justify-center flex-1 h-full text-indigo-600 dark:text-indigo-400 transition-colors';
+                } else {
+                    btn.className = 'flex flex-col items-center justify-center flex-1 h-full text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors';
+                }
+            });
+
+            if (tabId === 'reports') {
+                generateReport();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderAll() {
+            renderJobSelectOptions();
+            renderDashboardStats();
+            renderRecentSessions();
+            renderJobsList();
+            generateReport();
+        }
+
+        function renderJobSelectOptions() {
+            const select = document.getElementById('meter-job-select');
+            const currentVal = select.value || state.meter.jobId;
+            
+            let html = '<option value="">-- Choose Job --</option>';
+            state.jobs.filter(j => j.status === 'active').forEach(j => {
+                html += `<option value="${j.id}" ${j.id === currentVal ? 'selected' : ''}>${escapeHtml(j.name)} ($${j.rate.toFixed(2)}/hr)</option>`;
+            });
+            select.innerHTML = html;
+
+            if (state.meter.status !== 'stopped' && state.meter.jobId) {
+                select.value = state.meter.jobId;
+                select.disabled = true;
+            } else {
+                select.disabled = false;
+            }
+        }
+
+        document.getElementById('meter-job-select').addEventListener('change', function(e) {
+            state.meter.jobId = e.target.value;
+            const job = state.jobs.find(j => j.id === state.meter.jobId);
+            if (job) {
+                document.getElementById('active-job-title').textContent = job.name;
+            } else {
+                document.getElementById('active-job-title').textContent = 'Select a job to start meter';
+            }
+            saveStorage();
+        });
+
+        function startMeter() {
+            const jobId = document.getElementById('meter-job-select').value;
+            if (!jobId) {
+                showToast('Please select an active job first!', 'error');
+                return;
+            }
+
+            state.meter.jobId = jobId;
+            state.meter.status = 'running';
+            state.meter.startTimestamp = Date.now();
+            if (!state.meter.accumulatedSeconds) {
+                state.meter.accumulatedSeconds = 0;
+            }
+
+            document.getElementById('meter-job-select').disabled = true;
+            document.getElementById('btn-start-meter').disabled = true;
+            document.getElementById('btn-pause-meter').disabled = false;
+            document.getElementById('btn-stop-meter').disabled = false;
+
+            document.getElementById('meter-status-dot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+            document.getElementById('meter-status-text').textContent = 'Meter Running (Background Active)';
+
+            const job = state.jobs.find(j => j.id === jobId);
+            if (job) document.getElementById('active-job-title').textContent = job.name;
+
+            if (state.meter.timerInterval) clearInterval(state.meter.timerInterval);
+            state.meter.timerInterval = setInterval(() => {
+                // Every second, check exact delta from startTimestamp
+                const now = Date.now();
+                const diff = Math.floor((now - state.meter.startTimestamp) / 1000);
+                // Total accumulated seconds is initial accumulated + diff in this run segment
+                // We can recalculate live:
+                updateMeterDisplay();
+            }, 1000);
+
+            saveStorage();
+            showToast('Meter started successfully!');
+        }
+
+        function pauseMeter() {
+            if (state.meter.status === 'running') {
+                // Calculate final seconds of this run segment and add to accumulated
+                const now = Date.now();
+                const diff = Math.floor((now - state.meter.startTimestamp) / 1000);
+                state.meter.accumulatedSeconds += diff;
+                state.meter.status = 'paused';
+                state.meter.startTimestamp = null;
+                clearInterval(state.meter.timerInterval);
+
+                document.getElementById('btn-start-meter').disabled = false;
+                document.getElementById('btn-start-meter').innerHTML = '<i data-lucide="play" class="w-5 h-5 fill-current"></i><span>Resume Meter</span>';
+                document.getElementById('btn-pause-meter').disabled = true;
+
+                document.getElementById('meter-status-dot').className = 'w-2 h-2 rounded-full bg-amber-400';
+                document.getElementById('meter-status-text').textContent = 'Meter Paused';
+                lucide.createIcons();
+                saveStorage();
+                showToast('Meter paused', 'info');
+            }
+        }
+
+        function resumeMeterAfterReload() {
+            const job = state.jobs.find(j => j.id === state.meter.jobId);
+            if (job) document.getElementById('active-job-title').textContent = job.name;
+
+            if (state.meter.status === 'running') {
+                document.getElementById('meter-job-select').disabled = true;
+                document.getElementById('btn-start-meter').disabled = true;
+                document.getElementById('btn-pause-meter').disabled = false;
+                document.getElementById('btn-stop-meter').disabled = false;
+
+                document.getElementById('meter-status-dot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+                document.getElementById('meter-status-text').textContent = 'Meter Running (Background Active)';
+
+                state.meter.timerInterval = setInterval(() => {
+                    updateMeterDisplay();
+                }, 1000);
+            } else if (state.meter.status === 'paused') {
+                document.getElementById('btn-start-meter').disabled = false;
+                document.getElementById('btn-start-meter').innerHTML = '<i data-lucide="play" class="w-5 h-5 fill-current"></i><span>Resume Meter</span>';
+                document.getElementById('btn-pause-meter').disabled = true;
+                document.getElementById('btn-stop-meter').disabled = false;
+
+                document.getElementById('meter-status-dot').className = 'w-2 h-2 rounded-full bg-amber-400';
+                document.getElementById('meter-status-text').textContent = 'Meter Paused';
+            }
+            updateMeterDisplay();
+        }
+
+        function stopMeter() {
+            let totalSec = state.meter.accumulatedSeconds;
+            if (state.meter.status === 'running' && state.meter.startTimestamp) {
+                totalSec += Math.floor((Date.now() - state.meter.startTimestamp) / 1000);
+            }
+
+            if (totalSec <= 0) {
+                showToast('No elapsed time recorded yet.', 'error');
+                return;
+            }
+
+            const jobId = state.meter.jobId;
+            const job = state.jobs.find(j => j.id === jobId);
+            const rate = job ? job.rate : 0;
+            const hours = totalSec / 3600;
+            const earned = hours * rate;
+
+            const newSession = {
+                id: 'sess_' + Date.now(),
+                jobId: jobId,
+                startTime: new Date(Date.now() - (totalSec * 1000)).toISOString(),
+                durationSeconds: totalSec,
+                earned: parseFloat(earned.toFixed(2))
+            };
+
+            state.sessions.unshift(newSession);
+
+            if (state.meter.timerInterval) clearInterval(state.meter.timerInterval);
+            state.meter = {
+                jobId: null,
+                status: 'stopped',
+                startTimestamp: null,
+                accumulatedSeconds: 0,
+                timerInterval: null
+            };
+
+            document.getElementById('meter-job-select').disabled = false;
+            document.getElementById('meter-job-select').value = '';
+            document.getElementById('btn-start-meter').disabled = false;
+            document.getElementById('btn-start-meter').innerHTML = '<i data-lucide="play" class="w-5 h-5 fill-current"></i><span>Start Meter</span>';
+            document.getElementById('btn-pause-meter').disabled = true;
+            document.getElementById('btn-stop-meter').disabled = true;
+
+            document.getElementById('meter-status-dot').className = 'w-2 h-2 rounded-full bg-emerald-400';
+            document.getElementById('meter-status-text').textContent = 'Meter Ready';
+            document.getElementById('active-job-title').textContent = 'Select a job to start meter';
+
+            updateMeterDisplay();
+            saveStorage();
+            renderAll();
+            lucide.createIcons();
+            showToast('Job completed & session saved successfully!');
+        }
+
+        function updateMeterDisplay() {
+            let totalSec = state.meter.accumulatedSeconds;
+            if (state.meter.status === 'running' && state.meter.startTimestamp) {
+                totalSec += Math.floor((Date.now() - state.meter.startTimestamp) / 1000);
+            }
+
+            const hrs = Math.floor(totalSec / 3600);
+            const mins = Math.floor((totalSec % 3600) / 60);
+            const secs = totalSec % 60;
+
+            const timeStr = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            document.getElementById('meter-timer').textContent = timeStr;
+
+            const job = state.jobs.find(j => j.id === state.meter.jobId);
+            const rate = job ? job.rate : 0;
+            const earnings = (totalSec / 3600) * rate;
+            document.getElementById('meter-earnings').textContent = '$' + earnings.toFixed(2);
+        }
+
+        function renderDashboardStats() {
+            const completedCount = state.sessions.length;
+            const totalEarned = state.sessions.reduce((acc, s) => acc + s.earned, 0);
+            const activeJobsCount = state.jobs.filter(j => j.status === 'active').length;
+
+            document.getElementById('stat-completed-count').textContent = completedCount;
+            document.getElementById('stat-total-earned').textContent = '$' + totalEarned.toFixed(2);
+            document.getElementById('stat-active-jobs').textContent = activeJobsCount;
+        }
+
+        function renderRecentSessions() {
+            const listEl = document.getElementById('recent-sessions-list');
+            const recent = state.sessions.slice(0, 5);
+
+            if (recent.length === 0) {
+                listEl.innerHTML = `<div class="p-6 text-center text-slate-400 text-sm">No work sessions logged yet. Start the meter above to track your first job!</div>`;
+                return;
+            }
+
+            let html = '';
+            recent.forEach(s => {
+                const job = state.jobs.find(j => j.id === s.jobId);
+                const jobName = job ? job.name : 'Unknown Job';
+                const dateStr = new Date(s.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                const durHrs = (s.durationSeconds / 3600).toFixed(2);
+
+                html += `
+                    <div class="px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <div>
+                            <h4 class="font-semibold text-sm">${escapeHtml(jobName)}</h4>
+                            <p class="text-xs text-slate-500 mt-0.5">${dateStr} &bull; ${durHrs} hrs worked</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold text-emerald-600 dark:text-emerald-400">$${s.earned.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            listEl.innerHTML = html;
+        }
+
+        function filterJobTab(status) {
+            state.currentJobFilter = status;
+            if (status === 'active') {
+                document.getElementById('job-tab-active').className = 'px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 transition-colors';
+                document.getElementById('job-tab-achieved').className = 'px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors';
+            } else {
+                document.getElementById('job-tab-achieved').className = 'px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 transition-colors';
+                document.getElementById('job-tab-active').className = 'px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors';
+            }
+            renderJobsList();
+        }
+
+        function renderJobsList() {
+            const gridEl = document.getElementById('jobs-grid');
+            const filtered = state.jobs.filter(j => j.status === state.currentJobFilter);
+
+            if (filtered.length === 0) {
+                gridEl.innerHTML = `
+                    <div class="col-span-full py-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <i data-lucide="briefcase" class="w-10 h-10 mx-auto text-slate-400 mb-2"></i>
+                        <p class="text-slate-500 text-sm">No ${state.currentJobFilter} jobs found.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(j => {
+                const isAchieved = j.status === 'achieved';
+                html += `
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="font-bold text-base text-slate-900 dark:text-white">${escapeHtml(j.name)}</h3>
+                                <span class="px-2.5 py-1 rounded-lg text-xs font-semibold ${isAchieved ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'}">
+                                    $${j.rate.toFixed(2)}/hr
+                                </span>
+                            </div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-2">${escapeHtml(j.description || 'No description provided.')}</p>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <span class="text-xs text-slate-400">Added ${new Date(j.createdAt).toLocaleDateString()}</span>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="openEditJobModal('${j.id}')" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors" title="Edit Job">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="toggleJobAchieved('${j.id}')" class="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-xl transition-colors" title="${isAchieved ? 'Reactivate Job' : 'Mark Achieved'}">
+                                    <i data-lucide="${isAchieved ? 'rotate-ccw' : 'check-circle'}" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteJob('${j.id}')" class="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-colors" title="Delete Job">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            gridEl.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function openJobModal() {
+            document.getElementById('job-modal-title').textContent = 'Add New Job';
+            document.getElementById('edit-job-id').value = '';
+            document.getElementById('job-name-input').value = '';
+            document.getElementById('job-rate-input').value = '';
+            document.getElementById('job-desc-input').value = '';
+            document.getElementById('job-modal').classList.remove('hidden');
+        }
+
+        function openEditJobModal(id) {
+            const job = state.jobs.find(j => j.id === id);
+            if (!job) return;
+
+            document.getElementById('job-modal-title').textContent = 'Edit Job';
+            document.getElementById('edit-job-id').value = job.id;
+            document.getElementById('job-name-input').value = job.name;
+            document.getElementById('job-rate-input').value = job.rate;
+            document.getElementById('job-desc-input').value = job.description || '';
+            document.getElementById('job-modal').classList.remove('hidden');
+        }
+
+        function closeJobModal() {
+            document.getElementById('job-modal').classList.add('hidden');
+        }
+
+        function saveJobForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-job-id').value;
+            const name = document.getElementById('job-name-input').value.trim();
+            const rate = parseFloat(document.getElementById('job-rate-input').value);
+            const description = document.getElementById('job-desc-input').value.trim();
+
+            if (!name || isNaN(rate)) return;
+
+            if (id) {
+                const job = state.jobs.find(j => j.id === id);
+                if (job) {
+                    job.name = name;
+                    job.rate = rate;
+                    job.description = description;
+                }
+                showToast('Job updated successfully!');
+            } else {
+                const newJob = {
+                    id: 'job_' + Date.now(),
+                    name,
+                    rate,
+                    description,
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                };
+                state.jobs.push(newJob);
+                showToast('New job added successfully!');
+            }
+
+            closeJobModal();
+            saveStorage();
+            renderAll();
+        }
+
+        function toggleJobAchieved(id) {
+            const job = state.jobs.find(j => j.id === id);
+            if (job) {
+                job.status = job.status === 'active' ? 'achieved' : 'active';
+                saveStorage();
+                renderAll();
+                showToast(job.status === 'achieved' ? 'Job marked as achieved!' : 'Job reactivated!');
+            }
+        }
+
+        function deleteJob(id) {
+            if (confirm('Are you sure you want to delete this job? Associated session history will remain.')) {
+                state.jobs = state.jobs.filter(j => j.id !== id);
+                saveStorage();
+                renderAll();
+                showToast('Job deleted', 'info');
+            }
+        }
+
+        function setReportPeriod(period) {
+            state.reportPeriod = period;
+            ['last-week', 'last-month', 'custom'].forEach(p => {
+                const btn = document.getElementById('period-' + p);
+                if (p === period) {
+                    btn.className = 'px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-sm transition-all';
+                } else {
+                    btn.className = 'px-3 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition-all';
+                }
+            });
+
+            const customContainer = document.getElementById('custom-date-container');
+            if (period === 'custom') {
+                customContainer.classList.remove('hidden');
+                if (!document.getElementById('report-start-date').value) {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() - 1);
+                    document.getElementById('report-start-date').value = d.toISOString().split('T')[0];
+                    document.getElementById('report-end-date').value = new Date().toISOString().split('T')[0];
+                }
+            } else {
+                customContainer.classList.add('hidden');
+            }
+
+            generateReport();
+        }
+
+        function generateReport() {
+            const period = state.reportPeriod;
+            let startDate = null;
+            let endDate = new Date();
+            endDate.setHours(23, 59, 59, 999);
+
+            if (period === 'last-week') {
+                startDate = new Date();
+                startDate.setDate(startDate.getDate() - 7);
+                startDate.setHours(0, 0, 0, 0);
+            } else if (period === 'last-month') {
+                startDate = new Date();
+                startDate.setMonth(startDate.getMonth() - 1);
+                startDate.setHours(0, 0, 0, 0);
+            } else if (period === 'custom') {
+                const startVal = document.getElementById('report-start-date').value;
+                const endVal = document.getElementById('report-end-date').value;
+                startDate = startVal ? new Date(startVal) : new Date(0);
+                startDate.setHours(0, 0, 0, 0);
+                endDate = endVal ? new Date(endVal) : new Date();
+                endDate.setHours(23, 59, 59, 999);
+            }
+
+            const filteredSessions = state.sessions.filter(s => {
+                const sDate = new Date(s.startTime);
+                return sDate >= startDate && sDate <= endDate;
+            });
+
+            const totalSec = filteredSessions.reduce((acc, s) => acc + s.durationSeconds, 0);
+            const totalHours = totalSec / 3600;
+            const totalEarnings = filteredSessions.reduce((acc, s) => acc + s.earned, 0);
+            const sessionCount = filteredSessions.length;
+
+            document.getElementById('report-total-hours').textContent = totalHours.toFixed(1) + ' hrs';
+            document.getElementById('report-total-mins').textContent = Math.round(totalSec / 60) + ' minutes total';
+            document.getElementById('report-total-earnings').textContent = '$' + totalEarnings.toFixed(2);
+            document.getElementById('report-session-count').textContent = sessionCount;
+
+            const jobMap = {};
+            filteredSessions.forEach(s => {
+                if (!jobMap[s.jobId]) {
+                    jobMap[s.jobId] = { sec: 0, earned: 0, count: 0 };
+                }
+                jobMap[s.jobId].sec += s.durationSeconds;
+                jobMap[s.jobId].earned += s.earned;
+                jobMap[s.jobId].count += 1;
+            });
+
+            const breakdownEl = document.getElementById('report-breakdown-list');
+            let breakdownHtml = '';
+            const jobIds = Object.keys(jobMap);
+
+            if (jobIds.length === 0) {
+                breakdownHtml = `<div class="p-6 text-center text-slate-400 text-sm">No work sessions recorded in this period.</div>`;
+            } else {
+                jobIds.forEach(jobId => {
+                    const job = state.jobs.find(j => j.id === jobId);
+                    const name = job ? job.name : 'Unknown Job';
+                    const data = jobMap[jobId];
+                    const hrs = (data.sec / 3600).toFixed(1);
+                    const pct = totalEarnings > 0 ? Math.round((data.earned / totalEarnings) * 100) : 0;
+
+                    breakdownHtml += `
+                        <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h4 class="font-semibold text-sm">${escapeHtml(name)}</h4>
+                                    <span class="font-bold text-emerald-600 dark:text-emerald-400">$${data.earned.toFixed(2)}</span>
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+                                    <span>${hrs} hrs worked (${data.count} sessions)</span>
+                                    <span>${pct}% of total</span>
+                                </div>
+                                <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-indigo-600 h-full rounded-full" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            breakdownEl.innerHTML = breakdownHtml;
+
+            const tableEl = document.getElementById('report-sessions-table');
+            let tableHtml = '';
+            if (filteredSessions.length === 0) {
+                tableHtml = `<tr><td colspan="6" class="py-6 text-center text-slate-400">No session records found.</td></tr>`;
+            } else {
+                filteredSessions.forEach(s => {
+                    const job = state.jobs.find(j => j.id === s.jobId);
+                    const jobName = job ? job.name : 'Unknown Job';
+                    const rate = job ? job.rate : 0;
+                    const dateStr = new Date(s.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                    const durHrs = (s.durationSeconds / 3600).toFixed(2);
+
+                    tableHtml += `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-0">
+                            <td class="py-3 px-6 font-medium">${escapeHtml(jobName)}</td>
+                            <td class="py-3 px-6 text-slate-500">${dateStr}</td>
+                            <td class="py-3 px-6 font-mono">${durHrs} hrs</td>
+                            <td class="py-3 px-6 text-slate-500">$${rate.toFixed(2)}/hr</td>
+                            <td class="py-3 px-6 font-bold text-emerald-600 dark:text-emerald-400">$${s.earned.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right">
+                                <button onclick="deleteSession('${s.id}')" class="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors" title="Delete Session">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            tableEl.innerHTML = tableHtml;
+            lucide.createIcons();
+        }
+
+        function deleteSession(id) {
+            if (confirm('Are you sure you want to delete this session record?')) {
+                state.sessions = state.sessions.filter(s => s.id !== id);
+                saveStorage();
+                renderAll();
+                showToast('Session record deleted', 'info');
+            }
+        }
+
+        function exportReportCSV() {
+            let csv = 'Job Name,Date,Duration (Hours),Hourly Rate,Earned ($)\n';
+            state.sessions.forEach(s => {
+                const job = state.jobs.find(j => j.id === s.jobId);
+                const jobName = job ? job.name : 'Unknown Job';
+                const rate = job ? job.rate : 0;
+                const dateStr = new Date(s.startTime).toLocaleDateString();
+                const durHrs = (s.durationSeconds / 3600).toFixed(2);
+                csv += `"${jobName}","${dateStr}",${durHrs},${rate},${s.earned.toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'job_meter_report_' + new Date().toISOString().split('T')[0] + '.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('CSV report exported successfully!');
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
